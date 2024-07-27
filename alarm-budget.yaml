@@ -28,19 +28,28 @@ Resources:
         ZipFile: |
           import json
           import boto3
-
+          
           def handler(event, context):
               ec2 = boto3.client('ec2')
-              response = ec2.describe_instances()
+              
+              # 実行中のインスタンスのみをリストするフィルタ
+              filters = [{'Name': 'instance-state-name', 'Values': ['running']}]
+              
+              response = ec2.describe_instances(Filters=filters)
               instance_ids = []
+              
               for reservation in response['Reservations']:
                   for instance in reservation['Instances']:
-                      instance_ids.append(instance['InstanceId'])
+                      if instance['State']['Name'] == 'running':
+                          instance_ids.append(instance['InstanceId'])
+                          
+              # インスタンスが存在する場合のみ停止処理を行う
               if instance_ids:
-                  ec2.stop_instances(InstanceIds=instance_ids)
+                  stop_response = ec2.stop_instances(InstanceIds=instance_ids)
+                  
               return {
                   'statusCode': 200,
-                  'body': json.dumps('EC2 instances stopped')
+                  'body': json.dumps(f'Stopped instances: {instance_ids}')
               }
 
   LambdaExecutionRole:
