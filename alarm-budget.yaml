@@ -8,80 +8,12 @@ Parameters:
     Type: String
     AllowedPattern: >-
       [a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+.@[a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+\.([a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+\.)*([a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+)
-
 Resources:
-  BudgetNotificationTopic:
-    Type: AWS::SNS::Topic
-    Properties:
-      DisplayName: "Budget Notification Topic"
-      Subscription:
-        - Endpoint: !GetAtt BudgetActionLambda.Arn
-          Protocol: lambda
-
-  BudgetActionLambda:
-    Type: AWS::Lambda::Function
-    Properties:
-      Handler: index.handler
-      Role: !GetAtt LambdaExecutionRole.Arn
-      Runtime: python3.8
-      Timeout: 10
-      Code:
-        ZipFile: |
-          import json
-          import boto3
-          
-          def handler(event, context):
-              ec2 = boto3.client('ec2')
-              
-              # 実行中のインスタンスのみをリストするフィルタ
-              filters = [{'Name': 'instance-state-name', 'Values': ['running']}]
-              
-              response = ec2.describe_instances(Filters=filters)
-              instance_ids = []
-              
-              for reservation in response['Reservations']:
-                  for instance in reservation['Instances']:
-                      if instance['State']['Name'] == 'running':
-                          instance_ids.append(instance['InstanceId'])
-                          
-              # インスタンスが存在する場合のみ停止処理を行う
-              if instance_ids:
-                  stop_response = ec2.stop_instances(InstanceIds=instance_ids)
-                  
-              return {
-                  'statusCode': 200,
-                  'body': json.dumps(f'Stopped instances: {instance_ids}')
-              }
-
-  LambdaExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: LambdaEC2Policy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ec2:DescribeInstances
-                  - ec2:StopInstances
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: "*"
-
-  MyBudget:
-    Type: "AWS::Budgets::Budget"
+  # Budgetの設定
+  myBudget:
+    Type: AWS::Budgets::Budget
     Properties:
       Budget:
-        BudgetName: "MyBudget"
         BudgetLimit:
           Amount: !Ref myAlarmCostUSD
           Unit: USD
@@ -114,23 +46,22 @@ Resources:
             ComparisonOperator: GREATER_THAN
             Threshold: 0.1
           Subscribers:
-            - SubscriptionType: SNS
-              Address: !Ref BudgetNotificationTopic
+            - SubscriptionType: EMAIL
+              Address: !Ref myEmail
         - Notification:
             NotificationType: ACTUAL
             ComparisonOperator: GREATER_THAN
             Threshold: 50
           Subscribers:
-            - SubscriptionType: SNS
-              Address: !Ref BudgetNotificationTopic
+            - SubscriptionType: EMAIL
+              Address: !Ref myEmail
         - Notification:
             NotificationType: ACTUAL
             ComparisonOperator: GREATER_THAN
             Threshold: 100
           Subscribers:
-            - SubscriptionType: SNS
-              Address: !Ref BudgetNotificationTopic
-
+            - SubscriptionType: EMAIL
+              Address: !Ref myEmail
 Outputs:
   BudgetId:
-    Value: !Ref MyBudget
+    Value: !Ref myBudget
