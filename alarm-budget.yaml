@@ -2,18 +2,76 @@ AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   myAlarmCostUSD:
     Type: Number
-    Default: 10
+    Default: 1
     Description: Alarm Cost.USD.
   myEmail:
     Type: String
     AllowedPattern: >-
-      [a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+.@[a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+\.([a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+\.)*([a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+)
+      [a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+.@[a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+\\.([a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+\\.)*([a-zA-Z0-9]+[-._a-zA-Z0-9]*[a-zA-Z0-9]+)
+
 Resources:
-  # BudgetÇÃê›íË
-  myBudget:
-    Type: AWS::Budgets::Budget
+  BudgetNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: "Budget Notification Topic"
+      Subscription:
+        - Endpoint: !GetAtt BudgetActionLambda.Arn
+          Protocol: lambda
+
+  BudgetActionLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.8
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+
+          def handler(event, context):
+              ec2 = boto3.client('ec2')
+              response = ec2.describe_instances()
+              instance_ids = []
+              for reservation in response['Reservations']:
+                  for instance in reservation['Instances']:
+                      instance_ids.append(instance['InstanceId'])
+              if instance_ids:
+                  ec2.stop_instances(InstanceIds=instance_ids)
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps('EC2 instances stopped')
+              }
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaEC2Policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:StopInstances
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  MyBudget:
+    Type: "AWS::Budgets::Budget"
     Properties:
       Budget:
+        BudgetName: "MyBudget"
         BudgetLimit:
           Amount: !Ref myAlarmCostUSD
           Unit: USD
@@ -23,24 +81,46 @@ Resources:
         - Notification:
             NotificationType: FORECASTED
             ComparisonOperator: GREATER_THAN
-            Threshold: 100
+            Threshold: 0.1
           Subscribers:
             - SubscriptionType: EMAIL
               Address: !Ref myEmail
         - Notification:
             NotificationType: FORECASTED
             ComparisonOperator: GREATER_THAN
-            Threshold: 200
+            Threshold: 50
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref myEmail
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
           Subscribers:
             - SubscriptionType: EMAIL
               Address: !Ref myEmail
         - Notification:
             NotificationType: ACTUAL
             ComparisonOperator: GREATER_THAN
+            Threshold: 0.1
+          Subscribers:
+            - SubscriptionType: SNS
+              Address: !Ref BudgetNotificationTopic
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 50
+          Subscribers:
+            - SubscriptionType: SNS
+              Address: !Ref BudgetNotificationTopic
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
             Threshold: 100
           Subscribers:
-            - SubscriptionType: EMAIL
-              Address: !Ref myEmail
+            - SubscriptionType: SNS
+              Address: !Ref BudgetNotificationTopic
+
 Outputs:
   BudgetId:
-    Value: !Ref myBudget
+    Value: !Ref MyBudget
