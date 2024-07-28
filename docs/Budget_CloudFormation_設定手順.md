@@ -5,7 +5,7 @@ CloudFormation（AWSマネージドのIaCサービス）を使用してBudget（
 
 ## 1. テンプレートファイルをローカルにダウンロード
 [Github](https://github.com/kazucch0925/cloudformation_test)から「alarm-budget.yaml」か「alarm-and-stopInstances-budget.yaml」をローカルにダウンロード
-> [!NOTE]
+> [!note]
 > - どちらを使うかは以下を参考に各自の用途に合わせる
 > - 共通 : 予測値や実コストがしきい値を超えそう、または超えたタイミングでメールで通知
 >   - alarm-budget.yaml : メールでの通知のみ
@@ -29,7 +29,7 @@ CloudFormation（AWSマネージドのIaCサービス）を使用してBudget（
 > [!note]
 > - テンプレでは「基準値の何割超過したか」を判定条件としており、myAlarmCostUSDはその基準値となる値（デフォルトは1 USD）  
 > - テンプレで指定している割合は以下3通り
-※カッコ内は、基準値を1 USDとした場合のしきい値）  
+> ※カッコ内は、基準値を1 USDとした場合のしきい値
 >   - 0.1%（0.001 USD）  
 >   - 50%（0.50 USD）  
 >   - 100%（1.00 USD）  
@@ -40,7 +40,7 @@ CloudFormation（AWSマネージドのIaCサービス）を使用してBudget（
 6. **確認して作成**で設定を確認し、「送信」押下
 ![確認して作成_1](images/howto_setup_5.png)
 ![確認して作成_2](images/howto_setup_6.png)
-> [!TIPS]
+> [!tip]
 > - 「alarm-and-stopInstances-budget.yaml」のテンプレ内でIAMリソースの作成を行っている。そのため、上記テンプレを使用する場合はこのタイミングでIAMリソース作成の許可を求められますが、インスタンス停止に必要最低限の権限に絞ってあるため安心してチェックを入れてください
 > ![a](images/howto_setup_6a.png)
 
