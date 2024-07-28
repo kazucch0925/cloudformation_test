@@ -7,7 +7,7 @@ CloudFormation（AWSマネージドのIaCサービス）を使用してBudget（
 [Github](https://github.com/kazucch0925/cloudformation_test)から「alarm-budget.yaml」か「alarm-and-stopInstances-budget.yaml」をローカルにダウンロード
 > [!note]
 > - どちらを使うかは以下を参考に各自の用途に合わせる
-> - 共通 : 予測値や実コストがしきい値を超えそう、または超えたタイミングでメールで通知
+> - 共通 : 予測値や実コストが基準値を超えそう、または超えたタイミングでメールで通知
 >   - alarm-budget.yaml : メールでの通知のみ
 >   - alarm-and-stopInstances-budget.yaml : メールでの通知 + リージョン内で起動中の全てのEC2インスタンスを停止（終了ではないためインスタンス自体は残る）
 
