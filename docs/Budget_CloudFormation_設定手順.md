@@ -41,7 +41,7 @@ CloudFormation（AWSマネージドのIaCサービス）を使用してBudget（
 ![確認して作成_1](images/howto_setup_5.png)
 ![確認して作成_2](images/howto_setup_6.png)
 > [!tip]
-> - 「alarm-and-stopInstances-budget.yaml」のテンプレ内でIAMリソースの作成を行っている。そのため、上記テンプレを使用する場合はこのタイミングでIAMリソース作成の許可を求められますが、インスタンス停止に必要最低限の権限に絞ってあるため安心してチェックを入れてください
+> - 「alarm-and-stopInstances-budget.yaml」のテンプレ内でIAMリソースの作成を行っている。そのため、このテンプレを使用する場合はこのタイミングでIAMリソース作成の許可を求められますが、インスタンス停止に必要最低限の権限に絞ってあるため安心してチェックを入れてください
 > ![a](images/howto_setup_6a.png)
 
 7. スタックが「<span style="color: green;">**CREATE_COMPLETE**</span>」になるまでしばらく待機
