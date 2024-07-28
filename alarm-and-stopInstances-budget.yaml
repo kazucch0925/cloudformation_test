@@ -33,7 +33,7 @@ Resources:
           def handler(event, context):
               ec2 = boto3.client('ec2')
               
-              # 螳溯｡御ｸｭ縺ｮ繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ縺ｮ縺ｿ繧偵Μ繧ｹ繝医☆繧九ヵ繧｣繝ｫ繧ｿ
+              # 実行中のインスタンスのみをリストするフィルタ
               filters = [{'Name': 'instance-state-name', 'Values': ['running']}]
               
               response = ec2.describe_instances(Filters=filters)
@@ -44,7 +44,7 @@ Resources:
                       if instance['State']['Name'] == 'running':
                           instance_ids.append(instance['InstanceId'])
                           
-              # 繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ縺悟ｭ伜惠縺吶ｋ蝣ｴ蜷医�ｮ縺ｿ蛛懈ｭ｢蜃ｦ逅�繧定｡後≧
+              # インスタンスが存在する場合のみ停止処理を行う
               if instance_ids:
                   stop_response = ec2.stop_instances(InstanceIds=instance_ids)
                   
